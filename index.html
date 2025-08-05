@@ -161,13 +161,22 @@
             });
         }
 
+        // function checkAuthStatus() {
+        //     const savedUser = localStorage.getItem('currentUser');
+        //     if (savedUser) {
+        //         currentUser = JSON.parse(savedUser);
+        //         showProductsSection();
+        //     }
+        // }
         function checkAuthStatus() {
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
+            const token = localStorage.getItem('token');
+            const name = localStorage.getItem('userName');
+            if (token) {
+                currentUser = { name };
                 showProductsSection();
             }
         }
+
 
         function showLogin() {
             document.getElementById('loginForm').style.display = 'grid';
@@ -183,24 +192,81 @@
             document.querySelector('.auth-toggle button:last-child').classList.add('active');
         }
 
-        function handleLogin() {
+        // function handleLogin() {
+        //     const email = document.getElementById('loginEmail').value;
+        //     const password = document.getElementById('loginPassword').value;
+
+        //     // Simple authentication (in real app, this would be server-side)
+        //     const user = users.find(u => u.email === email && u.password === password);
+            
+        //     if (user) {
+        //         currentUser = user;
+        //         localStorage.setItem('currentUser', JSON.stringify(user));
+        //         showSuccess('Login successful!');
+        //         setTimeout(showProductsSection, 1000);
+        //     } else {
+        //         showError('Invalid email or password!');
+        //     }
+        // }
+        async function handleLogin() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
 
-            // Simple authentication (in real app, this would be server-side)
-            const user = users.find(u => u.email === email && u.password === password);
-            
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                showSuccess('Login successful!');
-                setTimeout(showProductsSection, 1000);
-            } else {
-                showError('Invalid email or password!');
+            try {
+                const res = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userName', data.name);
+                    showSuccess(data.message);
+                    setTimeout(showProductsSection, 1000);
+                } else {
+                    showError(data.message);
+                }
+            } catch (err) {
+                showError('Login failed.');
             }
         }
 
-        function handleRegister() {
+
+        // function handleRegister() {
+        //     const name = document.getElementById('registerName').value;
+        //     const email = document.getElementById('registerEmail').value;
+        //     const password = document.getElementById('registerPassword').value;
+        //     const confirmPassword = document.getElementById('confirmPassword').value;
+
+        //     if (password !== confirmPassword) {
+        //         showError('Passwords do not match!');
+        //         return;
+        //     }
+
+        //     if (users.find(u => u.email === email)) {
+        //         showError('Email already exists!');
+        //         return;
+        //     }
+
+        //     const newUser = {
+        //         id: Date.now(),
+        //         name,
+        //         email,
+        //         password
+        //     };
+
+        //     users.push(newUser);
+        //     localStorage.setItem('users', JSON.stringify(users));
+            
+        //     showSuccess('Registration successful! Please login.');
+        //     setTimeout(() => {
+        //         showLogin();
+        //         document.getElementById('registerForm').reset();
+        //     }, 1500);
+        // }
+        async function handleRegister() {
             const name = document.getElementById('registerName').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
@@ -211,27 +277,28 @@
                 return;
             }
 
-            if (users.find(u => u.email === email)) {
-                showError('Email already exists!');
-                return;
+            try {
+                const res = await fetch('http://localhost:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showSuccess(data.message);
+                    setTimeout(() => {
+                        showLogin();
+                        document.getElementById('registerForm').reset();
+                    }, 1500);
+                } else {
+                    showError(data.message);
+                }
+            } catch (err) {
+                showError('Registration failed.');
             }
-
-            const newUser = {
-                id: Date.now(),
-                name,
-                email,
-                password
-            };
-
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            showSuccess('Registration successful! Please login.');
-            setTimeout(() => {
-                showLogin();
-                document.getElementById('registerForm').reset();
-            }, 1500);
         }
+
 
         function showProductsSection() {
             document.getElementById('authSection').style.display = 'none';
@@ -243,32 +310,66 @@
             loadCart();
         }
 
-        function loadProducts() {
-            const grid = document.getElementById('productsGrid');
-            grid.innerHTML = '';
+        // function loadProducts() {
+        //     const grid = document.getElementById('productsGrid');
+        //     grid.innerHTML = '';
 
-            products.forEach(product => {
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card';
-                productCard.innerHTML = `
-                    <div class="product-image">${product.emoji}</div>
-                    <div class="product-info">
-                        <div class="product-name">${product.name}</div>
-                        <div class="product-price">$${product.price}</div>
-                        <div class="product-description">${product.description}</div>
-                        <button class="add-to-cart" onclick="addToCart(${product.id})">Add to Cart</button>
-                    </div>
-                `;
+        //     products.forEach(product => {
+        //         const productCard = document.createElement('div');
+        //         productCard.className = 'product-card';
+        //         productCard.innerHTML = `
+        //             <div class="product-image">${product.emoji}</div>
+        //             <div class="product-info">
+        //                 <div class="product-name">${product.name}</div>
+        //                 <div class="product-price">$${product.price}</div>
+        //                 <div class="product-description">${product.description}</div>
+        //                 <button class="add-to-cart" onclick="addToCart(${product.id})">Add to Cart</button>
+        //             </div>
+        //         `;
                 
-                productCard.onclick = (e) => {
-                    if (!e.target.classList.contains('add-to-cart')) {
-                        showProductDetail(product);
-                    }
-                };
+        //         productCard.onclick = (e) => {
+        //             if (!e.target.classList.contains('add-to-cart')) {
+        //                 showProductDetail(product);
+        //             }
+        //         };
                 
-                grid.appendChild(productCard);
-            });
-        }
+        //         grid.appendChild(productCard);
+        //     });
+        // }
+
+            
+
+            async function loadProducts() {
+                try {
+                    const res = await fetch('http://localhost:5000/api/products');
+                    const data = await res.json();
+                    products = data;
+                    renderProducts();
+                } catch (err) {
+                    showError('Failed to load products.');
+                }
+            }
+
+            function renderProducts() {
+                const grid = document.getElementById('productsGrid');
+                grid.innerHTML = '';
+
+                products.forEach(product => {
+                    const productCard = document.createElement('div');
+                    productCard.className = 'product-card';
+                    productCard.innerHTML = `
+                        <div class="product-image">${product.emoji || '📦'}</div>
+                        <div class="product-info">
+                            <div class="product-name">${product.name}</div>
+                            <div class="product-price">$${product.price}</div>
+                            <div class="product-description">${product.description}</div>
+                            <button class="add-to-cart" onclick="addToCart(${product.id})">Add to Cart</button>
+                        </div>
+                    `;
+                    grid.appendChild(productCard);
+                });
+            }
+
 
         function addToCart(productId) {
             const product = products.find(p => p.id === productId);
@@ -361,37 +462,73 @@
             document.getElementById('cartTotal').textContent = `Total: $${total.toFixed(2)}`;
         }
 
-        function checkout() {
+        // function checkout() {
+        //     if (cart.length === 0) {
+        //         showError('Your cart is empty!');
+        //         return;
+        //     }
+
+        //     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+        //     // Simulate order processing
+        //     const order = {
+        //         id: Date.now(),
+        //         userId: currentUser.id,
+        //         items: [...cart],
+        //         total: total,
+        //         date: new Date().toISOString(),
+        //         status: 'Processing'
+        //     };
+
+        //     // Save order (in real app, this would be sent to backend)
+        //     let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        //     orders.push(order);
+        //     localStorage.setItem('orders', JSON.stringify(orders));
+
+        //     // Clear cart
+        //     cart = [];
+        //     updateCartDisplay();
+        //     saveCart();
+        //     closeCart();
+
+        //     showSuccess(`Order placed successfully! Order ID: ${order.id}`);
+        // }
+        async function checkout() {
             if (cart.length === 0) {
                 showError('Your cart is empty!');
                 return;
             }
 
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            // Simulate order processing
-            const order = {
-                id: Date.now(),
-                userId: currentUser.id,
-                items: [...cart],
-                total: total,
-                date: new Date().toISOString(),
-                status: 'Processing'
-            };
+            const token = localStorage.getItem('token');
+            const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-            // Save order (in real app, this would be sent to backend)
-            let orders = JSON.parse(localStorage.getItem('orders')) || [];
-            orders.push(order);
-            localStorage.setItem('orders', JSON.stringify(orders));
+            try {
+                const res = await fetch('http://localhost:5000/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({
+                        items: cart,
+                        total
+                    })
+                });
 
-            // Clear cart
-            cart = [];
-            updateCartDisplay();
-            saveCart();
-            closeCart();
-
-            showSuccess(`Order placed successfully! Order ID: ${order.id}`);
+                const data = await res.json();
+                if (res.ok) {
+                    cart = [];
+                    updateCartDisplay();
+                    closeCart();
+                    showSuccess(`Order placed successfully! Order ID: ${data.orderId}`);
+                } else {
+                    showError(data.message);
+                }
+            } catch (err) {
+                showError('Checkout failed.');
+            }
         }
+
 
         function showProductDetail(product) {
             const productDetail = document.getElementById('productDetail');
